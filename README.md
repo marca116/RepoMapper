@@ -259,7 +259,7 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
 
 ### Setup
 
-1.  Ensure you've added all your projects to the `projects.json` file, specifying the root directory for each project. This allows the MCP server to locate your code.
+1.  Ensure you've added all your projects to the `projects.json` file (located in the same folder as `repomap`), specifying the full path to the root directory for each project. Giving the project a good description will help the LLM figure out which project to use without you having to tell it. This, ultimately, allows the MCP server to locate your code.
     
 2.  The RepoMap MCP server uses STDIO (standard input/output) for communication. No additional configuration is required for the transport layer.
     
