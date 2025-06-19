@@ -267,7 +267,7 @@ class RepoMap:
         definitions = defaultdict(set)
         
         personalization = {}
-        chat_rel_fnames = set(self.get_rel_fname(f) for f in chat_fnames) # New line
+        chat_rel_fnames = set(self.get_rel_fname(f) for f in chat_fnames)
         
         all_fnames = list(set(chat_fnames + other_fnames))
         
@@ -289,7 +289,7 @@ class RepoMap:
             
             # Set personalization for chat files
             if fname in chat_fnames:
-                personalization[rel_fname] = 100.0 # Increased value
+                personalization[rel_fname] = 100.0
         
         # Build graph
         G = nx.MultiDiGraph()
@@ -343,7 +343,7 @@ class RepoMap:
                         boost *= 10.0
                     if rel_fname in mentioned_fnames:
                         boost *= 5.0
-                    if rel_fname in chat_rel_fnames: # Direct boost for chat files
+                    if rel_fname in chat_rel_fnames:
                         boost *= 20.0
                     
                     final_rank = file_rank * boost
@@ -529,7 +529,7 @@ class RepoMap:
         # Adjust max_map_tokens if no chat files
         max_map_tokens = self.max_map_tokens
         if not chat_files and self.max_context_window:
-            padding = 1024  # Reserve some tokens
+            padding = 1024
             available = self.max_context_window - padding
             max_map_tokens = min(
                 max_map_tokens * self.map_mul_no_files,
