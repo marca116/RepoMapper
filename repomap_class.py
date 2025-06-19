@@ -34,7 +34,9 @@ from importance import filter_important_files
 
 # Constants
 CACHE_VERSION = 1
-TAGS_CACHE_DIR = f".repomap.tags.cache.v{CACHE_VERSION}"
+import os
+
+TAGS_CACHE_DIR = os.path.join(os.getcwd(), f".repomap.tags.cache.v{CACHE_VERSION}")
 SQLITE_ERRORS = (sqlite3.OperationalError, sqlite3.DatabaseError)
 
 # Tag namedtuple for storing parsed code definitions and references
@@ -263,6 +265,7 @@ class RepoMap:
         definitions = defaultdict(set)
         
         personalization = {}
+        chat_rel_fnames = set(self.get_rel_fname(f) for f in chat_fnames) # New line
         
         all_fnames = list(set(chat_fnames + other_fnames))
         
@@ -284,7 +287,7 @@ class RepoMap:
             
             # Set personalization for chat files
             if fname in chat_fnames:
-                personalization[rel_fname] = 1.0
+                personalization[rel_fname] = 100.0 # Increased value
         
         # Build graph
         G = nx.MultiDiGraph()
@@ -310,7 +313,7 @@ class RepoMap:
             if personalization:
                 ranks = nx.pagerank(G, personalization=personalization, alpha=0.85)
             else:
-                ranks = nx.pagerank(G, alpha=0.85)
+                ranks = {node: 1.0 for node in G.nodes()}
         except:
             # Fallback to uniform ranking
             ranks = {node: 1.0 for node in G.nodes()}
@@ -334,6 +337,8 @@ class RepoMap:
                         boost *= 10.0
                     if rel_fname in mentioned_fnames:
                         boost *= 5.0
+                    if rel_fname in chat_rel_fnames: # Direct boost for chat files
+                        boost *= 20.0
                     
                     final_rank = file_rank * boost
                     ranked_tags.append((final_rank, tag))
@@ -524,6 +529,7 @@ class RepoMap:
             return None
         
         if not files_listing:
+            print("files_listing is None")
             return None
         
         if self.verbose:

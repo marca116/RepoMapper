@@ -81,8 +81,8 @@ Examples:
     parser.add_argument(
         "--map-tokens",
         type=int,
-        default=1024,
-        help="Maximum tokens for the generated map (default: 1024)"
+        default=8192,
+        help="Maximum tokens for the generated map (default: 8192)"
     )
     
     parser.add_argument(
@@ -147,26 +147,31 @@ Examples:
     }
     
     # Process file arguments
-    chat_files = args.chat_files or []
-    other_files = args.other_files or []
+    chat_files_from_args = args.chat_files or [] # These are the paths as strings from the CLI
     
-    # If no explicit chat/other files specified, use paths
-    if not chat_files and not other_files and args.paths:
-        all_files = []
-        for path_str in args.paths:
-            path = Path(path_str)
-            if path.is_dir():
-                all_files.extend(find_src_files(str(path)))
-            elif path.is_file():
-                all_files.append(str(path))
-        
-        # Treat all as other_files for broader context
-        other_files = all_files
+    # Determine the list of unresolved path specifications that will form the 'other_files'
+    # These can be files or directories. find_src_files will expand them.
+    unresolved_paths_for_other_files_specs = []
+    if args.other_files:  # If --other-files is explicitly provided, it's the source
+        unresolved_paths_for_other_files_specs.extend(args.other_files)
+    elif args.paths:  # Else, if positional paths are given, they are the source
+        unresolved_paths_for_other_files_specs.extend(args.paths)
+    # If neither, unresolved_paths_for_other_files_specs remains empty.
+
+    # Now, expand all directory paths in unresolved_paths_for_other_files_specs into actual file lists
+    # and collect all file paths. find_src_files handles both files and directories.
+    effective_other_files_unresolved = []
+    for path_spec_str in unresolved_paths_for_other_files_specs:
+        effective_other_files_unresolved.extend(find_src_files(path_spec_str))
     
     # Convert to absolute paths
     root_path = Path(args.root).resolve()
-    chat_files = [str(Path(f).resolve()) for f in chat_files]
-    other_files = [str(Path(f).resolve()) for f in other_files]
+    # chat_files for RepoMap are from --chat-files argument, resolved.
+    chat_files = [str(Path(f).resolve()) for f in chat_files_from_args]
+    # other_files for RepoMap are the effective_other_files, resolved after expansion.
+    other_files = [str(Path(f).resolve()) for f in effective_other_files_unresolved]
+
+    print(f"Chat files: {chat_files}")
     
     # Convert mentioned files to sets
     mentioned_fnames = set(args.mentioned_files) if args.mentioned_files else None

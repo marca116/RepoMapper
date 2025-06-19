@@ -33,7 +33,27 @@ python repomap.py file1.py file2.py
 
 # Specify chat files (higher priority) vs other files
 python repomap.py --chat-files main.py --other-files src/
+
+# Specify mentioned files and identifiers
+python repomap.py --mentioned-files config.py --mentioned-idents "main_function"
+
+# Enable verbose output
+python repomap.py . --verbose
+
+# Force refresh of caches
+python repomap.py . --force-refresh
+
+# Specify model for token counting
+python repomap.py . --model gpt-3.5-turbo
+
+# Set maximum context window
+python repomap.py . --max-context-window 8192
 ```
+
+The tool prioritizes files in the following order:
+1.  `--chat-files`: These files are given the highest priority, as they are assumed to be the files you are currently working on.
+2.  `--mentioned-files`: These files are given a high priority, as they are explicitly mentioned in the current context.
+3.  `--other-files`: These files are given the lowest priority, and are used to provide additional context.
 
 ### Advanced Options
 
@@ -90,13 +110,40 @@ The tool uses persistent caching to speed up subsequent runs:
 ## Supported Languages
 
 Currently supports languages with Tree-sitter grammars:
-- Python
-- JavaScript/TypeScript
-- Java
-- C/C++
-- Go
-- Rust
-- And more (extensible via SCM query files)
+- arduino
+- chatito
+- commonlisp
+- cpp
+- csharp
+- c
+- dart
+- d
+- elisp
+- elixir
+- elm
+- gleam
+- go
+- javascript
+- java
+- lua
+- ocaml_interface
+- ocaml
+- pony
+- properties
+- python
+- racket
+- r
+- ruby
+- rust
+- solidity
+- swift
+- udev
+- c_sharp
+- hcl
+- kotlin
+- php
+- ql
+- scala
 
 ## License
 
