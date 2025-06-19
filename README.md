@@ -74,7 +74,6 @@ importance.py:
     ...
     ...
     ...
-
 ```
 
 ----------
@@ -92,11 +91,8 @@ importance.py:
 
 ## Installation
 
-Bash
-
-```
+```bash
 pip install -r requirements.txt
-
 ```
 
 ----------
@@ -105,9 +101,7 @@ pip install -r requirements.txt
 
 ### Basic Usage
 
-Bash
-
-```
+```bash
 # Map current directory
 python repomap.py .
 
@@ -137,7 +131,6 @@ python repomap.py . --max-context-window 8192
 
 # Exclude files with Page Rank 0
 python repomap.py . --exclude-unranked
-
 ```
 
 The tool prioritizes files in the following order:
@@ -148,9 +141,7 @@ The tool prioritizes files in the following order:
 
 ### Advanced Options
 
-Bash
-
-```
+```bash
 # Enable verbose output
 python repomap.py . --verbose
 
@@ -168,7 +159,6 @@ python repomap.py . --exclude-unranked
 
 # Mention specific files or identifiers for higher priority
 python repomap.py . --mentioned-files config.py --mentioned-idents "main_function"
-
 ```
 
 ----------
@@ -275,9 +265,8 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
     
 3.  To set up RepoMap as an MCP server with Cline (or similar tools like Roo), add the following configuration to your Cline settings file (e.g., `cline_mcp_settings.json`):
     
-    JSON
-    
-    ```
+       
+    ```json
     {
       "mcpServers": {
         "RepoMapper": {
@@ -291,7 +280,6 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
         }
       }
     }
-    
     ```
     
     -   Replace `"/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
@@ -314,9 +302,7 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
 
 ### Example `projects.json`
 
-JSON
-
-```
+```json
 {
   "projects": {
     "my_project": {
@@ -329,7 +315,6 @@ JSON
     }
   }
 }
-
 ```
 
 Make sure the `root` paths in `projects.json` are absolute paths to your projects.
