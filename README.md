@@ -48,6 +48,9 @@ python repomap.py . --model gpt-3.5-turbo
 
 # Set maximum context window
 python repomap.py . --max-context-window 8192
+
+# Exclude files with Page Rank 0
+python repomap.py . --exclude-unranked
 ```
 
 The tool prioritizes files in the following order:
@@ -69,6 +72,9 @@ python repomap.py . --model gpt-3.5-turbo
 
 # Set maximum context window
 python repomap.py . --max-context-window 8192
+
+# Exclude files with Page Rank 0
+python repomap.py . --exclude-unranked
 
 # Mention specific files or identifiers for higher priority
 python repomap.py . --mentioned-files config.py --mentioned-idents "main_function"

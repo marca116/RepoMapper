@@ -57,7 +57,8 @@ class RepoMap:
         verbose: bool = False,
         max_context_window: Optional[int] = None,
         map_mul_no_files: int = 8,
-        refresh: str = "auto"
+        refresh: str = "auto",
+        exclude_unranked: bool = False
     ):
         """Initialize RepoMap instance."""
         self.map_tokens = map_tokens
@@ -70,6 +71,7 @@ class RepoMap:
         self.max_context_window = max_context_window
         self.map_mul_no_files = map_mul_no_files
         self.refresh = refresh
+        self.exclude_unranked = exclude_unranked
         
         # Set up output handlers
         if output_handler_funcs is None:
@@ -328,6 +330,10 @@ class RepoMap:
             
             tags = self.get_tags(fname, rel_fname)
             file_rank = ranks.get(rel_fname, 0.0)
+
+            # Exclude files with Page Rank 0 if exclude_unranked is True
+            if self.exclude_unranked and file_rank == 0.0:
+                continue
             
             for tag in tags:
                 if tag.kind == "def":
@@ -402,10 +408,22 @@ class RepoMap:
             # Find absolute filename
             abs_fname = str(self.root / rel_fname)
             
+            # Get the max rank for the file
+            max_rank = max(rank for rank, tag in file_tag_list)
+            
             # Render the tree for this file
             rendered = self.render_tree(abs_fname, rel_fname, lois)
             if rendered:
-                tree_parts.append(rendered)
+                # Add rank value to the output
+                rendered_lines = rendered.splitlines()
+                first_line = rendered_lines[0]
+                code_lines = rendered_lines[1:]
+                
+                tree_parts.append(
+                    f"{first_line}\n"
+                    f"(Rank value: {max_rank:.4f})\n\n" # Added an extra newline here
+                    + "\n".join(code_lines)
+                )
         
         return "\n\n".join(tree_parts)
     

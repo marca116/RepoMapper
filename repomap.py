@@ -132,6 +132,12 @@ Examples:
         action="store_true",
         help="Force refresh of caches"
     )
+
+    parser.add_argument(
+        "--exclude-unranked",
+        action="store_true",
+        help="Exclude files with Page Rank 0 from the map"
+    )
     
     args = parser.parse_args()
     
@@ -185,7 +191,8 @@ Examples:
         file_reader_func=read_text,
         output_handler_funcs=output_handlers,
         verbose=args.verbose,
-        max_context_window=args.max_context_window
+        max_context_window=args.max_context_window,
+        exclude_unranked=args.exclude_unranked
     )
     
     # Generate the map
