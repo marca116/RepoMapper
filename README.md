@@ -275,14 +275,14 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
           "type": "stdio",
           "command": "/usr/bin/python3",
           "args": [
-            "/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"
+            "/mnt/programming/RepoMapper/repomap_server.py"
           ]
         }
       }
     }
     ```
     
-    -   Replace `"/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
+    -   Replace `"/mnt/programming/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
 
 ### Usage
 
