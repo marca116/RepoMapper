@@ -2,17 +2,21 @@
 
 RepoMap is a powerful tool designed to help, primarily LLMs, understand and navigate complex codebases. It functions both as a command-line application for on-demand analysis and as an MCP (Model Context Protocol) server, providing continuous repository mapping capabilities to other applications. By generating a "map" of the software repository, RepoMap highlights important files, code definitions, and their relationships. It leverages Tree-sitter for accurate code parsing and the PageRank algorithm to rank code elements by importance, ensuring that the most relevant information is always prioritized.
 
+----------
+
 ## Aider
 
 RepoMap is 100% based on Aider's Repo map functionality, but I don't believe it shares any code with it. Allow me to explain.
 
-My original effort was to take the RepoMap class from Aider, remove all the aider-specific dependencies, and then make it into a command-line tool. Python isn't my native language and I really struggled to get it to work. 
+My original effort was to take the RepoMap class from Aider, remove all the aider-specific dependencies, and then make it into a command-line tool. Python isn't my native language and I really struggled to get it to work.
 
 So a few hours ago, I had a different idea. I took the RepoMap and some of its related code from aider and I fed it to an LLM (Either Claude or Gemini 2.5 Pro, can't remember) and had it create specifications for this, basically, from aider's implementation. So it generated a very detailed specification for this application (minus the MCP bits) and then I fed that to, well, Aider with Claude 3.7, and it built the command-line version of this.
 
 I then used a combination of Aider w/Claude 3.7, Cline w/Gemini 2.5 Pro Preview & Gemini 2.5 Flash Preview, and Phind.com, and Gemini.com and Claude.com and ChatGPT.com and after a few hours, I finally got it sorted out. Again, keeping in mind, Python isn't really my native tongue.
 
-## Example output
+----------
+
+## Example Output
 
 ```
 > python repomap.py . --chat-files repomap_class.py
@@ -50,29 +54,40 @@ importance.py:
     ...
     ...
     ...
+
 ```
 
+----------
 
 ## Features
 
-- **Smart Code Analysis**: Uses Tree-sitter to parse source code and extract function/class definitions
-- **Relevance Ranking**: Employs PageRank algorithm to rank code elements by importance
-- **Token-Aware**: Respects token limits to fit within LLM context windows
-- **Caching**: Persistent caching for fast subsequent runs
-- **Multi-Language**: Supports Python, JavaScript, TypeScript, Java, C/C++, Go, Rust, and more
-- **Important File Detection**: Automatically identifies and prioritizes important files (README, requirements.txt, etc.)
+-   **Smart Code Analysis**: Uses Tree-sitter to parse source code and extract function/class definitions
+-   **Relevance Ranking**: Employs PageRank algorithm to rank code elements by importance
+-   **Token-Aware**: Respects token limits to fit within LLM context windows
+-   **Caching**: Persistent caching for fast subsequent runs
+-   **Multi-Language**: Supports Python, JavaScript, TypeScript, Java, C/C++, Go, Rust, and more
+-   **Important File Detection**: Automatically identifies and prioritizes important files (README, requirements.txt, etc.)
+
+----------
 
 ## Installation
 
-```bash
-pip install -r requirements.txt
+Bash
+
 ```
+pip install -r requirements.txt
+
+```
+
+----------
 
 ## Usage
 
 ### Basic Usage
 
-```bash
+Bash
+
+```
 # Map current directory
 python repomap.py .
 
@@ -102,16 +117,20 @@ python repomap.py . --max-context-window 8192
 
 # Exclude files with Page Rank 0
 python repomap.py . --exclude-unranked
+
 ```
 
 The tool prioritizes files in the following order:
-1.  `--chat-files`: These files are given the highest priority, as they are assumed to be the files you are currently working on.
-2.  `--mentioned-files`: These files are given a high priority, as they are explicitly mentioned in the current context.
-3.  `--other-files`: These files are given the lowest priority, and are used to provide additional context.
+
+1.  `--chat-files`: These files are given the highest priority, as they're assumed to be the files you're currently working on.
+2.  `--mentioned-files`: These files are given a high priority, as they're explicitly mentioned in the current context.
+3.  `--other-files`: These files are given the lowest priority and are used to provide additional context.
 
 ### Advanced Options
 
-```bash
+Bash
+
+```
 # Enable verbose output
 python repomap.py . --verbose
 
@@ -129,82 +148,100 @@ python repomap.py . --exclude-unranked
 
 # Mention specific files or identifiers for higher priority
 python repomap.py . --mentioned-files config.py --mentioned-idents "main_function"
+
 ```
+
+----------
 
 ## How It Works
 
-1. **File Discovery**: Scans the repository for source files
-2. **Code Parsing**: Uses Tree-sitter to parse code and extract definitions/references
-3. **Graph Building**: Creates a graph where files are nodes and symbol references are edges
-4. **Ranking**: Applies PageRank algorithm to rank files and symbols by importance
-5. **Token Optimization**: Uses binary search to fit the most important content within token limits
-6. **Output Generation**: Formats the results as a readable code map
+1.  **File Discovery**: Scans the repository for source files
+2.  **Code Parsing**: Uses Tree-sitter to parse code and extract definitions/references
+3.  **Graph Building**: Creates a graph where files are nodes and symbol references are edges
+4.  **Ranking**: Applies PageRank algorithm to rank files and symbols by importance
+5.  **Token Optimization**: Uses binary search to fit the most important content within token limits
+6.  **Output Generation**: Formats the results as a readable code map
+
+----------
 
 ## Output Format
 
 The tool generates a structured view of your codebase showing:
-- File paths and important code sections
-- Function and class definitions
-- Key relationships between code elements
-- Prioritized based on actual usage and references
+
+-   File paths and important code sections
+-   Function and class definitions
+-   Key relationships between code elements
+-   Prioritized based on actual usage and references
+
+----------
 
 ## Dependencies
 
-- `tiktoken`: Token counting for various LLM models
-- `networkx`: Graph algorithms (PageRank)
-- `diskcache`: Persistent caching
-- `grep-ast`: Tree-sitter integration for code parsing
-- `tree-sitter`: Code parsing framework
-- `pygments`: Syntax highlighting and lexical analysis
+-   `tiktoken`: Token counting for various LLM models
+-   `networkx`: Graph algorithms (PageRank)
+-   `diskcache`: Persistent caching
+-   `grep-ast`: Tree-sitter integration for code parsing
+-   `tree-sitter`: Code parsing framework
+-   `pygments`: Syntax highlighting and lexical analysis
+
+----------
 
 ## Caching
 
 The tool uses persistent caching to speed up subsequent runs:
-- Cache directory: `.repomap.tags.cache.v1/`
-- Automatically invalidated when files change
-- Can be cleared with `--force-refresh`
+
+-   Cache directory: `.repomap.tags.cache.v1/`
+-   Automatically invalidated when files change
+-   Can be cleared with `--force-refresh`
+
+----------
 
 ## Supported Languages
 
 Currently supports languages with Tree-sitter grammars:
-- arduino
-- chatito
-- commonlisp
-- cpp
-- csharp
-- c
-- dart
-- d
-- elisp
-- elixir
-- elm
-- gleam
-- go
-- javascript
-- java
-- lua
-- ocaml_interface
-- ocaml
-- pony
-- properties
-- python
-- racket
-- r
-- ruby
-- rust
-- solidity
-- swift
-- udev
-- c_sharp
-- hcl
-- kotlin
-- php
-- ql
-- scala
+
+-   arduino
+-   chatito
+-   commonlisp
+-   cpp
+-   csharp
+-   c
+-   dart
+-   d
+-   elisp
+-   elixir
+-   elm
+-   gleam
+-   go
+-   javascript
+-   java
+-   lua
+-   ocaml_interface
+-   ocaml
+-   pony
+-   properties
+-   python
+-   racket
+-   r
+-   ruby
+-   rust
+-   solidity
+-   swift
+-   udev
+-   c_sharp
+-   hcl
+-   kotlin
+-   php
+-   ql
+-   scala
+
+----------
 
 ## License
 
 This implementation is based on the RepoMap design from the Aider project.
+
+----------
 
 ## Running as an MCP Server
 
@@ -212,228 +249,15 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
 
 ### Setup
 
-1. Ensure you have added all your projects to the `projects.json` file, specifying the root directory for each project. This allows the MCP server to locate your code.
-
-2. The RepoMap MCP server uses STDIO (standard input/output) for communication. No additional configuration is required for the transport layer.
-
-3. To set up RepoMap as an MCP server with Cline (or similar tools like Roo), add the following configuration to your Cline settings file (e.g., `cline_mcp_settings.json`):
-
-```json
-{
-  "mcpServers": {
-    "RepoMapper": {
-      "disabled": false,
-      "timeout": 60,
-      "type": "stdio",
-      "command": "/usr/bin/python3",
-      "args": [
-        "/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"
-      ]
-    }
-  }
-}
-```
-
-* Replace `"/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
-
-
-### Usage
-
-1.  Run the `repomap_server.py` script:
-
-    ```bash
-    python repomap_server.py
-    ```
-
-2.  The server will start and listen for requests via STDIO.
-
-3.  Other applications can then use the `repo_map` tool provided by the server to generate repository maps. They will need to specify the `project_name` corresponding to a project defined in your `projects.json` file.
-
-### Example `projects.json`
-
-```json
-{
-  "projects": {
-    "my_project": {
-      "root": "/path/to/my/project",
-      "description": "My awesome project"
-    },
-    "another_project": {
-      "root": "/path/to/another/project",
-      "description": "Another project"
-    }
-  }
-}
-```
-
-Make sure the `root` paths in `projects.json` are absolute paths to your projects.
-
-## Features
-
-- **Smart Code Analysis**: Uses Tree-sitter to parse source code and extract function/class definitions
-- **Relevance Ranking**: Employs PageRank algorithm to rank code elements by importance
-- **Token-Aware**: Respects token limits to fit within LLM context windows
-- **Caching**: Persistent caching for fast subsequent runs
-- **Multi-Language**: Supports Python, JavaScript, TypeScript, Java, C/C++, Go, Rust, and more
-- **Important File Detection**: Automatically identifies and prioritizes important files (README, requirements.txt, etc.)
-
-## Installation
-
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Basic Usage
-
-```bash
-# Map current directory
-python repomap.py .
-
-# Map specific directory with custom token limit
-python repomap.py src/ --map-tokens 2048
-
-# Map specific files
-python repomap.py file1.py file2.py
-
-# Specify chat files (higher priority) vs other files
-python repomap.py --chat-files main.py --other-files src/
-
-# Specify mentioned files and identifiers
-python repomap.py --mentioned-files config.py --mentioned-idents "main_function"
-
-# Enable verbose output
-python repomap.py . --verbose
-
-# Force refresh of caches
-python repomap.py . --force-refresh
-
-# Specify model for token counting
-python repomap.py . --model gpt-3.5-turbo
-
-# Set maximum context window
-python repomap.py . --max-context-window 8192
-
-# Exclude files with Page Rank 0
-python repomap.py . --exclude-unranked
-```
-
-The tool prioritizes files in the following order:
-1.  `--chat-files`: These files are given the highest priority, as they are assumed to be the files you are currently working on.
-2.  `--mentioned-files`: These files are given a high priority, as they are explicitly mentioned in the current context.
-3.  `--other-files`: These files are given the lowest priority, and are used to provide additional context.
-
-### Advanced Options
-
-```bash
-# Enable verbose output
-python repomap.py . --verbose
-
-# Force refresh of caches
-python repomap.py . --force-refresh
-
-# Specify model for token counting
-python repomap.py . --model gpt-3.5-turbo
-
-# Set maximum context window
-python repomap.py . --max-context-window 8192
-
-# Exclude files with Page Rank 0
-python repomap.py . --exclude-unranked
-
-# Mention specific files or identifiers for higher priority
-python repomap.py . --mentioned-files config.py --mentioned-idents "main_function"
-```
-
-## How It Works
-
-1. **File Discovery**: Scans the repository for source files
-2. **Code Parsing**: Uses Tree-sitter to parse code and extract definitions/references
-3. **Graph Building**: Creates a graph where files are nodes and symbol references are edges
-4. **Ranking**: Applies PageRank algorithm to rank files and symbols by importance
-5. **Token Optimization**: Uses binary search to fit the most important content within token limits
-6. **Output Generation**: Formats the results as a readable code map
-
-## Output Format
-
-The tool generates a structured view of your codebase showing:
-- File paths and important code sections
-- Function and class definitions
-- Key relationships between code elements
-- Prioritized based on actual usage and references
-
-## Dependencies
-
-- `tiktoken`: Token counting for various LLM models
-- `networkx`: Graph algorithms (PageRank)
-- `diskcache`: Persistent caching
-- `grep-ast`: Tree-sitter integration for code parsing
-- `tree-sitter`: Code parsing framework
-- `pygments`: Syntax highlighting and lexical analysis
-
-## Caching
-
-The tool uses persistent caching to speed up subsequent runs:
-- Cache directory: `.repomap.tags.cache.v1/`
-- Automatically invalidated when files change
-- Can be cleared with `--force-refresh`
-
-## Supported Languages
-
-Currently supports languages with Tree-sitter grammars:
-- arduino
-- chatito
-- commonlisp
-- cpp
-- csharp
-- c
-- dart
-- d
-- elisp
-- elixir
-- elm
-- gleam
-- go
-- javascript
-- java
-- lua
-- ocaml_interface
-- ocaml
-- pony
-- properties
-- python
-- racket
-- r
-- ruby
-- rust
-- solidity
-- swift
-- udev
-- c_sharp
-- hcl
-- kotlin
-- php
-- ql
-- scala
-
-## License
-
-This implementation is based on the RepoMap design from the Aider project.
-
-## Running as an MCP Server
-
-RepoMap can also be run as an MCP (Model Context Protocol) server, allowing other applications to access its repository mapping capabilities.
-
-### Setup
-
-1.  Ensure you have added all your projects to the `projects.json` file, specifying the root directory for each project. This allows the MCP server to locate your code.
-
+1.  Ensure you've added all your projects to the `projects.json` file, specifying the root directory for each project. This allows the MCP server to locate your code.
+    
 2.  The RepoMap MCP server uses STDIO (standard input/output) for communication. No additional configuration is required for the transport layer.
-
+    
 3.  To set up RepoMap as an MCP server with Cline (or similar tools like Roo), add the following configuration to your Cline settings file (e.g., `cline_mcp_settings.json`):
-
-    ```json
+    
+    JSON
+    
+    ```
     {
       "mcpServers": {
         "RepoMapper": {
@@ -447,25 +271,32 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
         }
       }
     }
+    
     ```
-
-    *   Replace `"/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
+    
+    -   Replace `"/mnt/programming/CurrentDevelopment/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
 
 ### Usage
 
 1.  Run the `repomap_server.py` script:
-
-    ```bash
-    python repomap_server.py
+    
+    Bash
+    
     ```
-
+    python repomap_server.py
+    
+    ```
+    
 2.  The server will start and listen for requests via STDIO.
-
-3.  Other applications can then use the `repo_map` tool provided by the server to generate repository maps. They will need to specify the `project_name` corresponding to a project defined in your `projects.json` file.
+    
+3.  Other applications can then use the `repo_map` tool provided by the server to generate repository maps. They'll need to specify the `project_name` corresponding to a project defined in your `projects.json` file.
+    
 
 ### Example `projects.json`
 
-```json
+JSON
+
+```
 {
   "projects": {
     "my_project": {
@@ -478,6 +309,7 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
     }
   }
 }
+
 ```
 
 Make sure the `root` paths in `projects.json` are absolute paths to your projects.
