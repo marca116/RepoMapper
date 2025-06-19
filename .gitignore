@@ -1,0 +1,4 @@
+.aider*
+.repomap*
+.venv
+__pycache__/
