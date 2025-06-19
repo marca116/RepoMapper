@@ -1,5 +1,24 @@
 # RepoMap - Command-Line Tool and MCP Server
 
+## Table of Contents
+- [Aider](#aider)
+- [Example Output](#example-output)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Basic Usage](#basic-usage)
+  - [Advanced Options](#advanced-options)
+- [How It Works](#how-it-works)
+- [Output Format](#output-format)
+- [Dependencies](#dependencies)
+- [Caching](#caching)
+- [Supported Languages](#supported-languages)
+- [License](#license)
+- [Running as an MCP Server](#running-as-an-mcp-server)
+  - [Setup](#setup)
+  - [Usage](#usage-1)
+  - [Example projects.json](#example-projectsjson)
+
 RepoMap is a powerful tool designed to help, primarily LLMs, understand and navigate complex codebases. It functions both as a command-line application for on-demand analysis and as an MCP (Model Context Protocol) server, providing continuous repository mapping capabilities to other applications. By generating a "map" of the software repository, RepoMap highlights important files, code definitions, and their relationships. It leverages Tree-sitter for accurate code parsing and the PageRank algorithm to rank code elements by importance, ensuring that the most relevant information is always prioritized.
 
 ----------
