@@ -24,8 +24,28 @@ def find_src_files(directory: str) -> List[str]:
                 src_files.append(os.path.join(r, f))
     return src_files
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)-5s %(asctime)-15s %(name)s:%(funcName)s:%(lineno)d - %(message)s')
+# Configure logging - separate FastMCP logs from application logs
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+
+# Create file handler for debug logs
+file_handler = logging.FileHandler('repomap.log')
+file_handler.setLevel(logging.DEBUG)
+file_formatter = logging.Formatter('%(levelname)-5s %(asctime)-15s %(name)s:%(funcName)s:%(lineno)d - %(message)s')
+file_handler.setFormatter(file_formatter)
+root_logger.addHandler(file_handler)
+
+# Create console handler with WARNING level
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)
+console_formatter = logging.Formatter('%(levelname)-5s %(asctime)-15s %(name)s:%(funcName)s:%(lineno)d - %(message)s')
+console_handler.setFormatter(console_formatter)
+root_logger.addHandler(console_handler)
+
+# Set FastMCP logger to WARNING to suppress debug messages
+fastmcp_logger = logging.getLogger('fastmcp')
+fastmcp_logger.setLevel(logging.WARNING)
+
 log = logging.getLogger(__name__)
 
 mcp = FastMCP("RepoMapServer", stateless_http=True)
