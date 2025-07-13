@@ -20,7 +20,7 @@ RepoMap is a powerful tool designed to help, primarily LLMs, understand and navi
 - [Running as an MCP Server](#running-as-an-mcp-server)
   - [Setup](#setup)
   - [Usage](#usage-1)
-- [Changelog]
+- [Changelog](#changelog)
 ----------
 
 ## Aider
