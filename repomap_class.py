@@ -3,34 +3,31 @@ RepoMap class for generating repository maps.
 """
 
 import os
+import sys
 from pathlib import Path
 from collections import namedtuple, defaultdict
-from typing import List, Dict, Set, Optional, Tuple, Callable, Any
+from typing import List, Dict, Set, Optional, Tuple, Callable, Any, Union
 import shutil
 import sqlite3
 from utils import Tag
-
-try:
-    import networkx as nx
-except ImportError:
-    print("Error: networkx is required. Install with: pip install networkx")
-    sys.exit(1)
-
-try:
-    import diskcache
-except ImportError:
-    print("Error: diskcache is required. Install with: pip install diskcache")
-    sys.exit(1)
-
-try:
-    from grep_ast import TreeContext
-except ImportError:
-    print("Error: grep-ast is required. Install with: pip install grep-ast")
-    sys.exit(1)
-
+from dataclasses import dataclass
+import diskcache
+import networkx as nx
+import diskcache
+from grep_ast import TreeContext
 from utils import count_tokens, read_text, Tag
 from scm import get_scm_fname
 from importance import filter_important_files
+
+
+@dataclass
+class FileReport:
+    excluded: Dict[str, str]        # File -> exclusion reason with status
+    definition_matches: int         # Total definition tags
+    reference_matches: int          # Total reference tags
+    total_files_considered: int     # Total files provided as input
+
+
 
 # Constants
 CACHE_VERSION = 1
@@ -164,7 +161,12 @@ class RepoMap:
             return []
         
         try:
-            cached_entry = self.TAGS_CACHE.get(fname)
+            # Handle both diskcache Cache and in-memory dict
+            if isinstance(self.TAGS_CACHE, dict):
+                cached_entry = self.TAGS_CACHE.get(fname)
+            else:
+                cached_entry = self.TAGS_CACHE.get(fname)
+                
             if cached_entry and cached_entry.get("mtime") == file_mtime:
                 return cached_entry["data"]
         except SQLITE_ERRORS:
@@ -224,7 +226,7 @@ class RepoMap:
             for capture_name, nodes in captures.items():
                 for node in nodes:
                     if capture_name.startswith("name.definition"):
-                        kind = "def"
+                        kind = "极"
                     elif capture_name.startswith("name.reference"):
                         kind = "ref"
                     else:
@@ -232,7 +234,8 @@ class RepoMap:
                         continue 
                         
                     line_num = node.start_point[0] + 1
-                    name = node.text.decode('utf-8')
+                    # Handle potential None value
+                    name = node.text.decode('utf-8') if node.text else ""
                     
                     tags.append(Tag(
                         rel_fname=rel_fname,
@@ -254,12 +257,35 @@ class RepoMap:
         other_fnames: List[str],
         mentioned_fnames: Optional[Set[str]] = None,
         mentioned_idents: Optional[Set[str]] = None
-    ) -> List[Tuple[float, Tag]]:
-        """Get ranked tags using PageRank algorithm."""
+    ) -> Tuple[List[Tuple[float, Tag]], FileReport]:
+        """Get ranked tags using PageRank algorithm with file report."""
+        # Return empty list and empty report if no files
+        if not chat_fnames and not other_fnames:
+            return [], FileReport([], {}, 0, 0, 0)
+            
+        # Initialize file report early
+        included: List[str] = []
+        excluded: Dict[str, str] = {}
+        total_definitions = 0
+        total_references = 0
         if mentioned_fnames is None:
             mentioned_fnames = set()
         if mentioned_idents is None:
             mentioned_idents = set()
+        
+        # Normalize paths to absolute
+        def normalize_path(path):
+            return str(Path(path).resolve())
+        
+        chat_fnames = [normalize_path(f) for f in chat_fnames]
+        other_fnames = [normalize_path(f) for f in other_fnames]
+        
+        # Initialize file report
+        included: List[str] = []
+        excluded: Dict[str, str] = {}
+        input_files: Dict[str, Dict] = {}
+        total_definitions = 0
+        total_references = 0
         
         # Collect all tags
         defines = defaultdict(set)
@@ -275,8 +301,12 @@ class RepoMap:
             rel_fname = self.get_rel_fname(fname)
             
             if not os.path.exists(fname):
-                self.output_handlers['warning'](f"Repo-map can't include {fname}")
+                reason = "File not found"
+                excluded[fname] = reason
+                self.output_handlers['warning'](f"Repo-map can't include {fname}: {reason}")
                 continue
+                
+            included.append(fname)
             
             tags = self.get_tags(fname, rel_fname)
             
@@ -284,8 +314,10 @@ class RepoMap:
                 if tag.kind == "def":
                     defines[tag.name].add(rel_fname)
                     definitions[rel_fname].add(tag.name)
+                    total_definitions += 1
                 elif tag.kind == "ref":
                     references[tag.name].add(rel_fname)
+                    total_references += 1
             
             # Set personalization for chat files
             if fname in chat_fnames:
@@ -308,7 +340,7 @@ class RepoMap:
                         G.add_edge(ref_fname, def_fname, name=name)
         
         if not G.nodes():
-            return []
+            return [], file_report
         
         # Run PageRank
         try:
@@ -320,21 +352,34 @@ class RepoMap:
             # Fallback to uniform ranking
             ranks = {node: 1.0 for node in G.nodes()}
         
+        # Update excluded dictionary with status information
+        for fname in set(chat_fnames + other_fnames):
+            if fname in excluded:
+                # Add status prefix to existing exclusion reason
+                excluded[fname] = f"[EXCLUDED] {excluded[fname]}"
+            elif fname not in included:
+                excluded[fname] = "[NOT PROCESSED] File not included in final processing"
+        
+        # Create file report
+        file_report = FileReport(
+            excluded=excluded,
+            definition_matches=total_definitions,
+            reference_matches=total_references,
+            total_files_considered=len(all_fnames)
+        )
+        
         # Collect and rank tags
         ranked_tags = []
         
-        for fname in all_fnames:
+        for fname in included:
             rel_fname = self.get_rel_fname(fname)
-            if not os.path.exists(fname):
+            file_rank = ranks.get(rel_fname, 0.0)
+
+            # Exclude files with low Page Rank if exclude_unranked is True
+            if self.exclude_unranked and file_rank <= 0.0001:  # Use a small threshold to exclude near-zero ranks
                 continue
             
             tags = self.get_tags(fname, rel_fname)
-            file_rank = ranks.get(rel_fname, 0.0)
-
-            # Exclude files with Page Rank 0 if exclude_unranked is True
-            if self.exclude_unranked and file_rank == 0.0:
-                continue
-            
             for tag in tags:
                 if tag.kind == "def":
                     # Boost for mentioned identifiers
@@ -352,7 +397,7 @@ class RepoMap:
         # Sort by rank (descending)
         ranked_tags.sort(key=lambda x: x[0], reverse=True)
         
-        return ranked_tags
+        return ranked_tags, file_report
     
     def render_tree(self, abs_fname: str, rel_fname: str, lois: List[int]) -> str:
         """Render a code snippet with specific lines of interest."""
@@ -463,14 +508,14 @@ class RepoMap:
         max_map_tokens: int,
         mentioned_fnames: Optional[Set[str]] = None,
         mentioned_idents: Optional[Set[str]] = None
-    ) -> Optional[str]:
+    ) -> Tuple[Optional[str], FileReport]:
         """Generate the ranked tags map without caching."""
-        ranked_tags = self.get_ranked_tags(
+        ranked_tags, file_report = self.get_ranked_tags(
             chat_fnames, other_fnames, mentioned_fnames, mentioned_idents
         )
         
         if not ranked_tags:
-            return None
+            return None, file_report
         
         # Filter important files
         important_files = filter_important_files(
@@ -507,7 +552,7 @@ class RepoMap:
             else:
                 right = mid - 1
         
-        return best_tree
+        return best_tree, file_report
     
     def get_repo_map(
         self,
@@ -516,15 +561,18 @@ class RepoMap:
         mentioned_fnames: Optional[Set[str]] = None,
         mentioned_idents: Optional[Set[str]] = None,
         force_refresh: bool = False
-    ) -> Optional[str]:
-        """Generate the repository map."""
+    ) -> Tuple[Optional[str], FileReport]:
+        """Generate the repository map with file report."""
         if chat_files is None:
             chat_files = []
         if other_files is None:
             other_files = []
+            
+        # Create empty report for error cases
+        empty_report = FileReport({}, 0, 0, 0)
         
         if self.max_map_tokens <= 0 or not other_files:
-            return None
+            return None, empty_report
         
         # Adjust max_map_tokens if no chat files
         max_map_tokens = self.max_map_tokens
@@ -537,21 +585,22 @@ class RepoMap:
             )
         
         try:
-            files_listing = self.get_ranked_tags_map(
+            # get_ranked_tags_map returns (map_string, file_report)
+            map_string, file_report = self.get_ranked_tags_map(
                 chat_files, other_files, max_map_tokens,
                 mentioned_fnames, mentioned_idents, force_refresh
             )
         except RecursionError:
             self.output_handlers['error']("Disabling repo map, git repo too large?")
             self.max_map_tokens = 0
-            return None
+            return None, FileReport({}, 0, 0, 0)  # Ensure consistent return type
         
-        if not files_listing:
-            print("files_listing is None")
-            return None
+        if map_string is None:
+            print("map_string is None")
+            return None, file_report
         
         if self.verbose:
-            tokens = self.token_count(files_listing)
+            tokens = self.token_count(map_string)
             self.output_handlers['info'](f"Repo-map: {tokens / 1024:.1f} k-tokens")
         
         # Format final output
@@ -562,6 +611,6 @@ class RepoMap:
         else:
             repo_content = ""
         
-        repo_content += files_listing
+        repo_content += map_string
         
-        return repo_content
+        return repo_content, file_report

@@ -20,8 +20,7 @@ RepoMap is a powerful tool designed to help, primarily LLMs, understand and navi
 - [Running as an MCP Server](#running-as-an-mcp-server)
   - [Setup](#setup)
   - [Usage](#usage-1)
-  - [Example projects.json](#example-projectsjson)
-
+- [Changelog]
 ----------
 
 ## Aider
@@ -259,62 +258,39 @@ RepoMap can also be run as an MCP (Model Context Protocol) server, allowing othe
 
 ### Setup
 
-1.  Ensure you've added all your projects to the `projects.json` file (located in the same folder as `repomap`), specifying the full path to the root directory for each project. Giving the project a good description will help the LLM figure out which project to use without you having to tell it. This, ultimately, allows the MCP server to locate your code.
-    
-2.  The RepoMap MCP server uses STDIO (standard input/output) for communication. No additional configuration is required for the transport layer.
-    
-3.  To set up RepoMap as an MCP server with Cline (or similar tools like Roo), add the following configuration to your Cline settings file (e.g., `cline_mcp_settings.json`):
-    
-       
-    ```json
-    {
-      "mcpServers": {
-        "RepoMapper": {
-          "disabled": false,
-          "timeout": 60,
-          "type": "stdio",
-          "command": "/usr/bin/python3",
-          "args": [
-            "/mnt/programming/RepoMapper/repomap_server.py"
-          ]
-        }
-      }
-    }
-    ```
-    
-    -   Replace `"/mnt/programming/RepoMapper/repomap_server.py"` with the actual path to your `repomap_server.py` file.
-
-### Usage
-
-1.  Run the `repomap_server.py` script:
-    
-    Bash
-    
-    ```
-    python repomap_server.py
-    
-    ```
-    
-2.  The server will start and listen for requests via STDIO.
-    
-3.  Other applications can then use the `repo_map` tool provided by the server to generate repository maps. They'll need to specify the `project_name` corresponding to a project defined in your `projects.json` file.
-    
-
-### Example `projects.json`
+1. The RepoMap MCP server uses STDIO (standard input/output) for communication. No additional configuration is required for the transport layer.
+2. To set up RepoMap as an MCP server with Cline (or similar tools like Roo), add the following configuration to your Cline settings file (e.g., `cline_mcp_settings.json`):
 
 ```json
 {
-  "projects": {
-    "my_project": {
-      "root": "/path/to/my/project",
-      "description": "My awesome project"
-    },
-    "another_project": {
-      "root": "/path/to/another/project",
-      "description": "Another project"
+  "mcpServers": {
+    "RepoMapper": {
+      "disabled": false,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "/usr/bin/python3",
+      "args": [
+        "/absolute/path/to/repomap_server.py"
+      ]
     }
   }
 }
 ```
 
-Make sure the `root` paths in `projects.json` are absolute paths to your projects.
+- Replace `"/absolute/path/to/repomap_server.py"` with the actual path to your `repomap_server.py` file.
+
+### Usage
+
+1. Run the `repomap_server.py` script:
+
+```bash
+python repomap_server.py
+```
+
+2. The server will start and listen for requests via STDIO.
+3. Other applications can then use the `repo_map` tool provided by the server to generate repository maps. They must specify the `project_root` parameter as an absolute path to the project they want to map.
+
+
+## Changelog
+
+7/13/2025 - Removed the project.json dependency. Fixed the MCP server to be a little easier for the LLM to work with in terms of filenames.

@@ -1,8 +1,0 @@
-{
-  "projects": {
-    "sample_project": {
-      "root": "/mnt/dev/MyProject",
-      "description": "This is my special app that does special stuff."
-    }
-  }
-}
