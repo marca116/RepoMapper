@@ -56,7 +56,11 @@ class ProjectConfig:
             raise
     
     def get_project_root(self, project_name: str) -> str:
-        return self.config.get('projects', {}).get(project_name, {}).get('root', '')
+        projects = self.config.get('projects', {})
+        for key, project_data in projects.items():
+            if key.lower() == project_name.lower():
+                return project_data.get('root', '')
+        return ''
 
 # --- Global RepoMap Instance and Server Setup ---
 # This will be initialized during server startup
@@ -95,17 +99,18 @@ async def repo_map(
     verbose: bool = False,
     max_context_window: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Generate a repository map for the specified files, providing a list of function prototypes for files as well as relevant related
+    """Generate a repository map for the specified files, providing a list of function prototypes and variables for files as well as relevant related
     files. When providing filenames, it's crucial that all files are given as absolute paths. If relative paths are provided, they will 
-    be resolved against the project root.
+    be resolved against the project root. In addition to the files provided, relevant related files will also be included with a
+    very small ranking boost.
 
     :param project_name: The name of the project to map. This name is used to look up the project's root directory in 'projects.json'.
-    :param chat_files: A list of file paths that are currently in the chat context. These files will receive a higher ranking.
-    :param other_files: A list of other relevant file paths in the repository to consider for the map.
+    :param chat_files: A list of file paths that are currently in the chat context. These files will receive the highest ranking.
+    :param other_files: A list of other relevant file paths in the repository to consider for the map. They receive a lower ranking boost than mentioned_files and chat_files.
     :param token_limit: The maximum number of tokens the generated repository map should occupy. Defaults to 8192.
     :param exclude_unranked: If True, files with a PageRank of 0.0 will be excluded from the map. Defaults to False.
     :param force_refresh: If True, forces a refresh of the repository map cache. Defaults to False.
-    :param mentioned_files: Optional list of file paths explicitly mentioned in the conversation, to boost their ranking.
+    :param mentioned_files: Optional list of file paths explicitly mentioned in the conversation and receive a mid-level ranking boost.
     :param mentioned_idents: Optional list of identifiers explicitly mentioned in the conversation, to boost their ranking.
     :param verbose: If True, enables verbose logging for the RepoMap generation process. Defaults to False.
     :param max_context_window: Optional maximum context window size for token calculation, used to adjust map token limit when no chat files are provided.
@@ -211,6 +216,109 @@ async def list_projects() -> Dict[str, Any]:
     except Exception as e:
         log.exception(f"Error listing projects: {e}")
         return {"error": f"Error listing projects: {str(e)}"}
+    
+@mcp.tool()
+async def search_identifiers(
+    project_name: str,
+    query: str,
+    max_results: int = 50,
+    context_lines: int = 2,
+    include_definitions: bool = True,
+    include_references: bool = True
+) -> Dict[str, Any]:
+    """Search for identifiers in code files. Get back a list of matching identifiers with their file, line number, and context.
+       When searching, just use the identifier name without any special characters, prefixes or suffixes. The search is 
+       case-insensitive.
+
+    Args:
+        project_name: Name of the project to search in
+        query: Search query (identifier name)
+        max_results: Maximum number of results to return
+        context_lines: Number of lines of context to show
+        include_definitions: Whether to include definition occurrences
+        include_references: Whether to include reference occurrences
+    
+    Returns:
+        Dictionary containing search results or error message
+    """
+    global project_config
+
+    if project_config is None:
+        log.error("Server not fully initialized. ProjectConfig is missing.")
+        return {"error": "Server not fully initialized. ProjectConfig is missing."}
+
+    project_root = project_config.get_project_root(project_name)
+    if not project_root:
+        log.warning(f"Project '{project_name}' not found in projects.json")
+        return {"error": f"Project '{project_name}' not found in projects.json"}
+
+    try:
+        # Initialize RepoMap with search-specific settings
+        repo_map = RepoMap(
+            root=project_root,
+            token_counter_func=lambda text: count_tokens(text, "gpt-4"),
+            file_reader_func=read_text,
+            output_handler_funcs={'info': log.info, 'warning': log.warning, 'error': log.error},
+            verbose=False,
+            exclude_unranked=True
+        )
+
+        # Find all source files in the project
+        all_files = find_src_files(project_root)
+        
+        # Get all tags (definitions and references) for all files
+        all_tags = []
+        for file_path in all_files:
+            rel_path = str(Path(file_path).relative_to(project_root))
+            tags = repo_map.get_tags(file_path, rel_path)
+            all_tags.extend(tags)
+
+        # Filter tags based on search query and options
+        matching_tags = []
+        query_lower = query.lower()
+        
+        for tag in all_tags:
+            if query_lower in tag.name.lower():
+                if (tag.kind == "def" and include_definitions) or \
+                   (tag.kind == "ref" and include_references):
+                    matching_tags.append(tag)
+
+        # Sort by relevance (definitions first, then references)
+        matching_tags.sort(key=lambda x: (x.kind != "def", x.name.lower().find(query_lower)))
+
+        # Limit results
+        matching_tags = matching_tags[:max_results]
+
+        # Format results with context
+        results = []
+        for tag in matching_tags:
+            file_path = str(Path(project_root) / tag.rel_fname)
+            
+            # Calculate context range based on context_lines parameter
+            start_line = max(1, tag.line - context_lines)
+            end_line = tag.line + context_lines
+            context_range = list(range(start_line, end_line + 1))
+            
+            context = repo_map.render_tree(
+                file_path,
+                tag.rel_fname,
+                context_range
+            )
+            
+            if context:
+                results.append({
+                    "file": tag.rel_fname,
+                    "line": tag.line,
+                    "name": tag.name,
+                    "kind": tag.kind,
+                    "context": context
+                })
+
+        return {"results": results}
+
+    except Exception as e:
+        log.exception(f"Error searching identifiers in project '{project_name}': {e}")
+        return {"error": f"Error searching identifiers: {str(e)}"}    
 
 # --- Main Entry Point ---
 def main():
