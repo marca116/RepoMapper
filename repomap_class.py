@@ -225,14 +225,14 @@ class RepoMap:
             # Process captures as a dictionary
             for capture_name, nodes in captures.items():
                 for node in nodes:
-                    if capture_name.startswith("name.definition"):
-                        kind = "极"
-                    elif capture_name.startswith("name.reference"):
+                    if "name.definition" in capture_name:
+                        kind = "def"
+                    elif "name.reference" in capture_name:
                         kind = "ref"
                     else:
                         # Skip other capture types like 'reference.call' if not needed for tagging
                         continue 
-                        
+                    
                     line_num = node.start_point[0] + 1
                     # Handle potential None value
                     name = node.text.decode('utf-8') if node.text else ""

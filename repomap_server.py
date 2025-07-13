@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any, Set
 import dataclasses
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, settings
 from repomap_class import RepoMap
 from utils import count_tokens, read_text
 from scm import get_scm_fname
@@ -24,31 +24,31 @@ def find_src_files(directory: str) -> List[str]:
                 src_files.append(os.path.join(r, f))
     return src_files
 
-# Configure logging - separate FastMCP logs from application logs
+# Configure logging - only show errors
 root_logger = logging.getLogger()
-root_logger.setLevel(logging.DEBUG)
+root_logger.setLevel(logging.ERROR)
 
-# Create file handler for debug logs
-file_handler = logging.FileHandler('repomap.log')
-file_handler.setLevel(logging.DEBUG)
-file_formatter = logging.Formatter('%(levelname)-5s %(asctime)-15s %(name)s:%(funcName)s:%(lineno)d - %(message)s')
-file_handler.setFormatter(file_formatter)
-root_logger.addHandler(file_handler)
-
-# Create console handler with WARNING level
+# Create console handler for errors only
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+console_handler.setLevel(logging.ERROR)
 console_formatter = logging.Formatter('%(levelname)-5s %(asctime)-15s %(name)s:%(funcName)s:%(lineno)d - %(message)s')
 console_handler.setFormatter(console_formatter)
 root_logger.addHandler(console_handler)
 
-# Set FastMCP logger to WARNING to suppress debug messages
+# Suppress FastMCP logs
 fastmcp_logger = logging.getLogger('fastmcp')
-fastmcp_logger.setLevel(logging.WARNING)
+fastmcp_logger.setLevel(logging.ERROR)
+# Suppress server startup message
+server_logger = logging.getLogger('fastmcp.server')
+server_logger.setLevel(logging.ERROR)
 
 log = logging.getLogger(__name__)
 
-mcp = FastMCP("RepoMapServer", stateless_http=True)
+# Set global stateless_http setting
+settings.stateless_http = True
+
+# Create MCP server
+mcp = FastMCP("RepoMapServer")
 
 @mcp.tool()
 async def repo_map(
@@ -272,7 +272,7 @@ async def search_identifiers(
 # --- Main Entry Point ---
 def main():
     # Run the MCP server
-    log.info("Starting FastMCP server...")
+    log.debug("Starting FastMCP server...")
     mcp.run()
 
 if __name__ == "__main__":
