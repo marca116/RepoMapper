@@ -344,11 +344,9 @@ class RepoMap:
         
         # Run PageRank
         try:
-            if personalization:
-                ranks = nx.pagerank(G, personalization=personalization, alpha=0.85)
-            else:
-                ranks = {node: 1.0 for node in G.nodes()}
-        except:
+            ranks = nx.pagerank(G, personalization=personalization if personalization else None, alpha=0.85)
+        except Exception as e:
+            self.output_handlers['error'](f"Error running PageRank: {e}")
             # Fallback to uniform ranking
             ranks = {node: 1.0 for node in G.nodes()}
         
